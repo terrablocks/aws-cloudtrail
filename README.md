@@ -20,9 +20,11 @@ MIT Licence. See [Licence](LICENCE) for full details.
 module "vpc" {
   source = "github.com/terrablocks/aws-cloudtrail.git"
 
-  trail_name     = "all-regions"
+  trail_name = "all-regions"
 }
 ```
+
+
 ## Variables
 | Parameter             | Type    | Description                                                               | Default                      | Required |
 |-----------------------|---------|---------------------------------------------------------------------------|------------------------------|----------|
