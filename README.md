@@ -29,8 +29,8 @@ module "trail" {
 | Parameter             | Type    | Description                                                               | Default                      | Required |
 |-----------------------|---------|---------------------------------------------------------------------------|------------------------------|----------|
 | trail_name            | string  | Name for CloudTrail and other resources to be created alongwith                                                        |                  | Y        |
-| create_trail_key      | boolena  | Whether to create new KMS key for encrypting logs delivered by CloudTrail                        | true                             | N        |
-| trail_kms_key_arn     | strinf    | ARN of existing KMS key for encrypting logs delivered by CloudTrail         |  | N        |
+| create_trail_key      | boolean  | Whether to create new KMS key for encrypting logs delivered by CloudTrail                        | true                             | N        |
+| trail_kms_key_arn     | string    | ARN of existing KMS key for encrypting logs delivered by CloudTrail         |  | N        |
 | trail_kms_key_policy       | string  | Policy to associate with newly created KMS key. **Note:** Required ONLY if custom policy needs to be attached to newly created KMS key                |    | N        |
 | trail_kms_key_deletion_window  | number  | Duration in days after which the key is deleted after destruction of the resource, must be between 7 and 30 days              | 7     | N        |
 | trail_enable_key_rotation  | boolean | Whether to rotate KMS key periodically automatically        | false     | N        |
@@ -46,7 +46,7 @@ module "trail" {
 | sns_delivery_policy   | string  | SNS delivery policy     |    | N        |
 | sns_kms_key_id   | string  | ID/ARN/Alias of existing KMS key to associate with newly created SNS topic for encryption at rest     | alias/aws/sns   | N        |
 | enable_log_file_validation   | boolean  | Whether to include integrity hash for each log delivered      | true          | N        |
-| s3_kms_key_id   | string  | ID/ARN/Alias of existing KMS key to associate with newly created S3 bucket for server-side encryption      | alias/aws/sns          | N        |
+| s3_kms_key_id   | string  | ID/ARN/Alias of existing KMS key to associate with newly created S3 bucket for server-side encryption      | alias/aws/s3          | N        |
 | tags   | map  | Map of key-value pair to associate with resources             | {}     | N        |
 
 
