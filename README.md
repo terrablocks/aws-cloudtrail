@@ -17,7 +17,7 @@ MIT Licence. See [Licence](LICENCE) for full details.
 # Usage Instructions:
 ## Example:
 ```terraform
-module "vpc" {
+module "trail" {
   source = "github.com/terrablocks/aws-cloudtrail.git"
 
   trail_name = "all-regions"
