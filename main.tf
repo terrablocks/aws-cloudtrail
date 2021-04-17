@@ -66,6 +66,21 @@ resource "aws_s3_bucket_policy" "trail" {
                     "s3:x-amz-acl": "bucket-owner-full-control"
                 }
             }
+        },
+        {
+          "Sid": "AllowSSLRequestsOnly",
+          "Effect": "Deny",
+          "Principal": "*",
+          "Action": "s3:*",
+          "Resource": [
+            "${aws_s3_bucket.trail.arn}",
+            "${aws_s3_bucket.trail.arn}/*"
+          ],
+          "Condition": {
+            "Bool": {
+              "aws:SecureTransport": "false"
+            }
+          }
         }
     ]
 }
