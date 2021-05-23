@@ -1,29 +1,88 @@
 data "aws_caller_identity" "current" {}
 
+data "aws_region" "current" {}
+
 # KMS key for s3 sse encryption
 data "aws_kms_key" "trail_s3" {
-  key_id = var.s3_kms_key_id
+  key_id = var.s3_kms_key
 }
 
 # KMS key for sns topic rest-side encryption
 data "aws_kms_key" "trail_sns" {
-  key_id = var.sns_kms_key_id
+  key_id = var.sns_kms_key
 }
 
 # S3 bucket for storing cloudtrail logs
 resource "aws_s3_bucket" "trail" {
+  # checkov:skip=CKV_AWS_19: Default SSE is always in place
+  # checkov:skip=CKV_AWS_18: Access logging not required
+  # checkov:skip=CKV_AWS_144: CRR not required
+  # checkov:skip=CKV_AWS_145: Using KMS key for SSE depends on user
+  # checkov:skip=CKV_AWS_52: Enabling MFA delete depends on user
+  # checkov:skip=CKV_AWS_21: Enabling versioning depends on user
   bucket        = "${var.trail_name}-cloudtrail"
-  force_destroy = true
+  force_destroy = var.s3_force_destroy
   acl           = "private"
+
+  versioning {
+    enabled    = var.s3_enable_versioning
+    mfa_delete = var.s3_enable_mfa_delete
+  }
 
   server_side_encryption_configuration {
     rule {
       apply_server_side_encryption_by_default {
-        kms_master_key_id = data.aws_kms_key.trail_s3.id
-        sse_algorithm     = "aws:kms"
+        kms_master_key_id = var.s3_kms_key == "alias/aws/s3" ? null : data.aws_kms_key.trail_s3.id
+        sse_algorithm     = var.s3_kms_key == "alias/aws/s3" ? "AES256" : "aws:kms"
       }
     }
   }
+
+  policy = <<POLICY
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AWSCloudTrailAclCheck",
+            "Effect": "Allow",
+            "Principal": {
+              "Service": "cloudtrail.amazonaws.com"
+            },
+            "Action": "s3:GetBucketAcl",
+            "Resource": "arn:aws:s3:::${var.trail_name}-cloudtrail"
+        },
+        {
+            "Sid": "AWSCloudTrailWrite",
+            "Effect": "Allow",
+            "Principal": {
+              "Service": "cloudtrail.amazonaws.com"
+            },
+            "Action": "s3:PutObject",
+            "Resource": "arn:aws:s3:::${var.trail_name}-cloudtrail/prefix/AWSLogs/${data.aws_caller_identity.current.account_id}/*",
+            "Condition": {
+                "StringEquals": {
+                    "s3:x-amz-acl": "bucket-owner-full-control"
+                }
+            }
+        },
+        {
+          "Sid": "AllowSSLRequestsOnly",
+          "Effect": "Deny",
+          "Principal": "*",
+          "Action": "s3:*",
+          "Resource": [
+            "arn:aws:s3:::${var.trail_name}-cloudtrail",
+            "arn:aws:s3:::${var.trail_name}-cloudtrail/*"
+          ],
+          "Condition": {
+            "Bool": {
+              "aws:SecureTransport": "false"
+            }
+          }
+        }
+    ]
+}
+POLICY
 
   tags = var.tags
 }
@@ -37,62 +96,13 @@ resource "aws_s3_bucket_public_access_block" "trail" {
   restrict_public_buckets = true
 }
 
-resource "aws_s3_bucket_policy" "trail" {
-  bucket = aws_s3_bucket.trail.id
-
-  policy = <<POLICY
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Sid": "AWSCloudTrailAclCheck",
-            "Effect": "Allow",
-            "Principal": {
-              "Service": "cloudtrail.amazonaws.com"
-            },
-            "Action": "s3:GetBucketAcl",
-            "Resource": "${aws_s3_bucket.trail.arn}"
-        },
-        {
-            "Sid": "AWSCloudTrailWrite",
-            "Effect": "Allow",
-            "Principal": {
-              "Service": "cloudtrail.amazonaws.com"
-            },
-            "Action": "s3:PutObject",
-            "Resource": "${aws_s3_bucket.trail.arn}/prefix/AWSLogs/${data.aws_caller_identity.current.account_id}/*",
-            "Condition": {
-                "StringEquals": {
-                    "s3:x-amz-acl": "bucket-owner-full-control"
-                }
-            }
-        },
-        {
-          "Sid": "AllowSSLRequestsOnly",
-          "Effect": "Deny",
-          "Principal": "*",
-          "Action": "s3:*",
-          "Resource": [
-            "${aws_s3_bucket.trail.arn}",
-            "${aws_s3_bucket.trail.arn}/*"
-          ],
-          "Condition": {
-            "Bool": {
-              "aws:SecureTransport": "false"
-            }
-          }
-        }
-    ]
-}
-POLICY
-}
-
 # CloudWatch log group for storing CloudTrail logs
 resource "aws_cloudwatch_log_group" "trail" {
-  count      = var.create_cw_resources ? 1 : 0
-  name       = "${var.trail_name}-cloudtrail"
-  kms_key_id = var.create_trail_key ? join(",", aws_kms_key.trail.*.arn) : var.trail_kms_key_arn
-  tags       = var.tags
+  count             = var.create_cw_resources ? 1 : 0
+  name              = "${var.trail_name}-cloudtrail"
+  retention_in_days = var.cw_retention_days
+  kms_key_id        = var.create_trail_key ? join(",", aws_kms_key.trail.*.arn) : var.trail_kms_key_arn
+  tags              = var.tags
 }
 
 # IAM role for giving permission to CloudTrail to write logs to CloudWatch
@@ -186,6 +196,7 @@ data "aws_iam_policy_document" "trail_sns" {
 
 # KMS key for encrypting CloudTrail logs
 resource "aws_kms_key" "trail" {
+  # checkov:skip=CKV_AWS_7: Key rotation is by default enabled but can be turned off by user
   count                    = var.create_trail_key ? 1 : 0
   description              = "Key for encrypting CloudTrail logs"
   key_usage                = "ENCRYPT_DECRYPT"
@@ -202,6 +213,8 @@ resource "aws_kms_alias" "trail_kms" {
 }
 
 data "aws_iam_policy_document" "trail_kms" {
+  # checkov:skip=CKV_AWS_109: Condition present for permission management
+  # checkov:skip=CKV_AWS_111: Condition present for write access
   statement {
     actions = [
       "kms:GenerateDataKey*"
@@ -212,7 +225,7 @@ data "aws_iam_policy_document" "trail_kms" {
       variable = "kms:EncryptionContext:aws:cloudtrail:arn"
 
       values = [
-        "arn:aws:cloudtrail:${var.region}:${data.aws_caller_identity.current.account_id}:trail/${var.trail_name}/*"
+        "arn:aws:cloudtrail:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:trail/${var.trail_name}/*"
       ]
     }
 
@@ -242,7 +255,7 @@ data "aws_iam_policy_document" "trail_kms" {
       variable = "kms:EncryptionContext:aws:logs:arn"
 
       values = [
-        "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:${var.trail_name}-cloudtrail"
+        "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:${var.trail_name}-cloudtrail"
       ]
     }
 
@@ -250,7 +263,7 @@ data "aws_iam_policy_document" "trail_kms" {
 
     principals {
       type        = "Service"
-      identifiers = ["logs.${var.region}.amazonaws.com"]
+      identifiers = ["logs.${data.aws_region.current.name}.amazonaws.com"]
     }
 
     resources = [
@@ -277,6 +290,8 @@ data "aws_iam_policy_document" "trail_kms" {
 }
 
 resource "aws_cloudtrail" "trail" {
+  # checkov:skip=CKV_AWS_36: By default log file validation is switched on
+  # checkov:skip=CKV_AWS_67: By default multi-regional trail is created
   enable_logging                = var.enable_logging
   name                          = var.trail_name
   s3_bucket_name                = aws_s3_bucket.trail.id
