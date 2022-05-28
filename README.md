@@ -1,6 +1,6 @@
 # Enable CloudTrail for your AWS account
 
-![License](https://img.shields.io/github/license/terrablocks/aws-cloudtrail?style=for-the-badge) ![Tests](https://img.shields.io/github/workflow/status/terrablocks/aws-cloudtrail/tests/master?label=Test&style=for-the-badge) ![Checkov](https://img.shields.io/github/workflow/status/terrablocks/aws-cloudtrail/checkov/master?label=Checkov&style=for-the-badge) ![Commit](https://img.shields.io/github/last-commit/terrablocks/aws-cloudtrail?style=for-the-badge) ![Release](https://img.shields.io/github/v/release/terrablocks/aws-cloudtrail?style=for-the-badge)
+![License](https://img.shields.io/github/license/terrablocks/aws-cloudtrail?style=for-the-badge) ![Tests](https://img.shields.io/github/workflow/status/terrablocks/aws-cloudtrail/tests/main?label=Test&style=for-the-badge) ![Checkov](https://img.shields.io/github/workflow/status/terrablocks/aws-cloudtrail/checkov/main?label=Checkov&style=for-the-badge) ![Commit](https://img.shields.io/github/last-commit/terrablocks/aws-cloudtrail?style=for-the-badge) ![Release](https://img.shields.io/github/v/release/terrablocks/aws-cloudtrail?style=for-the-badge)
 
 This terraform module will deploy the following services:
 - CloudTrail
@@ -24,8 +24,8 @@ module "trail" {
 
 | Name | Version |
 |------|---------|
-| terraform | >= 0.13 |
-| aws | >= 3.37.0 |
+| terraform | >= 0.15 |
+| aws | >= 4.0.0 |
 
 ## Inputs
 
@@ -52,7 +52,7 @@ module "trail" {
 | enable_log_file_validation | Whether to include integrity hash for each log delivered | `bool` | `true` | no |
 | s3_force_destroy | Empty bucket content before deleting the bucket | `bool` | `true` | no |
 | s3_kms_key | ID/ARN/Alias of existing KMS key to associate with newly created S3 bucket for server-side encryption | `string` | `"alias/aws/s3"` | no |
-| s3_enable_versioning | Whether to enable versioning feature for S3 | `bool` | `false` | no |
+| s3_versioning_status | The versioning status of the S3 bucket. Valid values: `Enabled`, `Suspended` or `Disabled`. **Note:** Disabled can only be used if the versioning was never enabled on the bucket | `string` | `"Disabled"` | no |
 | s3_enable_mfa_delete | Whether to enable MFA requirement while deleting object from S3 | `bool` | `false` | no |
 | tags | Map of key-value pair to associate with resources | `map(string)` | `{}` | no |
 

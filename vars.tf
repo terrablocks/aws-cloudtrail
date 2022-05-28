@@ -123,10 +123,10 @@ variable "s3_kms_key" {
   description = "ID/ARN/Alias of existing KMS key to associate with newly created S3 bucket for server-side encryption"
 }
 
-variable "s3_enable_versioning" {
-  type        = bool
-  default     = false
-  description = "Whether to enable versioning feature for S3"
+variable "s3_versioning_status" {
+  type        = string
+  default     = "Disabled"
+  description = "The versioning status of the S3 bucket. Valid values: `Enabled`, `Suspended` or `Disabled`. **Note:** Disabled can only be used if the versioning was never enabled on the bucket"
 }
 
 variable "s3_enable_mfa_delete" {
