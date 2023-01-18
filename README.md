@@ -1,6 +1,6 @@
 # Enable CloudTrail for your AWS account
 
-![License](https://img.shields.io/github/license/terrablocks/aws-cloudtrail?style=for-the-badge) ![Tests](https://img.shields.io/github/workflow/status/terrablocks/aws-cloudtrail/tests/main?label=Test&style=for-the-badge) ![Checkov](https://img.shields.io/github/workflow/status/terrablocks/aws-cloudtrail/checkov/main?label=Checkov&style=for-the-badge) ![Commit](https://img.shields.io/github/last-commit/terrablocks/aws-cloudtrail?style=for-the-badge) ![Release](https://img.shields.io/github/v/release/terrablocks/aws-cloudtrail?style=for-the-badge)
+![License](https://img.shields.io/github/license/terrablocks/aws-cloudtrail?style=for-the-badge) ![Tests](https://img.shields.io/github/actions/workflow/status/terrablocks/aws-cloudtrail/tests.yml?branch=main&label=Test&style=for-the-badge) ![Checkov](https://img.shields.io/github/actions/workflow/status/terrablocks/aws-cloudtrail/checkov.yml?branch=main&label=Checkov&style=for-the-badge) ![Commit](https://img.shields.io/github/last-commit/terrablocks/aws-cloudtrail?style=for-the-badge) ![Release](https://img.shields.io/github/v/release/terrablocks/aws-cloudtrail?style=for-the-badge)
 
 This terraform module will deploy the following services:
 - CloudTrail
